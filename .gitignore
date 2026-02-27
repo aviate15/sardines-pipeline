@@ -1,0 +1,11 @@
+data/audio/
+whisper_cache.json
+*.wav
+*.mp3
+__pycache__/
+*.pyc
+.env
+config_secret.py
+output/
+*.csv
+!data/input.csv
