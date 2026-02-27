@@ -1,0 +1,14 @@
+openai-whisper
+transformers==4.40.0
+torch
+torchaudio
+jiwer
+pandas
+numpy
+requests
+sentence-transformers
+huggingface_hub
+accelerate
+qwen-asr
+ctc-forced-aligner
+soundfile
