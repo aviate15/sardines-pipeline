@@ -94,10 +94,16 @@ def fuse(A, S, C, whisper_quality):
     return final
 
 
-def confidence_check(scores):
+def confidence_check(scores, cer_scores=None):
     ranked     = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
     winner_idx = ranked[0][0]
     epsilon    = ranked[0][1] - ranked[1][1]
+    # Secondary tiebreaker: if epsilon is exactly 0, use lowest CER
+    if epsilon == 0.0 and cer_scores is not None:
+        max_score = ranked[0][1]
+        tied = [i for i, s in enumerate(scores) if abs(s - max_score) < 0.0001]
+        if len(tied) > 1:
+            winner_idx = min(tied, key=lambda i: (1.0 - cer_scores[i]))
     return winner_idx, epsilon, epsilon >= CONFIDENCE_THRESHOLD
 
 

@@ -98,7 +98,7 @@ def process_row(row, whisper_model, al_model, labse_model, w_cache, a_cache):
     final = fuse(A, S, C, w_quality)
 
     # ── CONFIDENCE CHECK ─────────────────────────────────────────────
-    winner_idx, epsilon, confident = confidence_check(final)
+    winner_idx, epsilon, confident = confidence_check(final, C)
     conf_flag = "HIGH_CONFIDENCE"
 
     if not confident:
