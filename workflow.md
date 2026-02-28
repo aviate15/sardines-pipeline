@@ -281,7 +281,7 @@ Open Notepad. Copy and paste exactly this:
 
 ```
 openai-whisper
-transformers==4.40.0
+transformers
 torch
 torchaudio
 jiwer
