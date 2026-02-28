@@ -25,7 +25,7 @@ def get_semantic_scores(norm_candidates, norm_ref, labse_model):
     # Note: LaBSE cosine sims are typically 0.5–0.95 in practice,
     # so after shifting the effective range is ~0.75–0.97.
     # This compresses the semantic signal somewhat but does not break it.
-    return [(float(ref_emb @ e) + 1) / 2 for e in embs[1:]]
+    return [float(ref_emb @ e) for e in embs[1:]]
 
 
 def get_cer_scores(norm_candidates, norm_ref):
@@ -45,12 +45,11 @@ def get_cer_scores(norm_candidates, norm_ref):
 
 
 def normalize_per_sample(scores):
-    # Max-only scaling — preserves relative differences between candidates.
-    # Min-max was collapsing all good options to ~1.0, destroying epsilon.
-    mx = max(scores)
-    if mx == 0:
-        return [0.0] * len(scores)
-    return [s / mx for s in scores]
+    # No scaling — raw scores fed directly into fusion.
+    # Max-only scaling was still creating 1.0 ceiling ties on multiple options.
+    # Raw acoustic [0.97,0.98,0.01] has real spread; after /max it becomes [0.99,1.0,0.01]
+    # which collapses top candidates together and kills epsilon.
+    return scores
 
 
 def verbosity_penalty(candidate_text, all_texts):
