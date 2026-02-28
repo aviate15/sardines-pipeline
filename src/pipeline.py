@@ -9,6 +9,9 @@ from aligner_module import (load_whisper, load_aligner, get_whisper_ref,
                              get_alignment_score, load_cache, save_cache)
 from scoring        import (load_labse, get_semantic_scores, get_cer_scores,
                              normalize_per_sample, fuse, confidence_check,
+                             acoustic_tiebreaker, compute_wer_cer,
+                             verbosity_penalty, format_penalty)
+                             normalize_per_sample, fuse, confidence_check,
                              acoustic_tiebreaker, compute_wer_cer)
 from config import *
 
@@ -72,7 +75,9 @@ def process_row(row, whisper_model, al_model, labse_model, w_cache, a_cache):
         elif flags[i] == 'HEADER_LEAK':
             A_penalized.append(a * 0.5)
         else:
-            A_penalized.append(a)
+            fp = format_penalty(raw_opts[i])
+            vp = verbosity_penalty(raw_opts[i], raw_opts)
+            A_penalized.append(a * fp * vp)
 
     A = normalize_per_sample(A_penalized)
 
@@ -99,9 +104,8 @@ def process_row(row, whisper_model, al_model, labse_model, w_cache, a_cache):
     conf_flag = "HIGH_CONFIDENCE"
 
     if not confident:
-        # Acoustic tiebreaker receives A_raw (pre-penalty).
-        # It applies its own penalties internally. See scoring.py.
-        winner_idx = acoustic_tiebreaker(A_raw, flags)
+        # Fused winner is kept — tiebreaker no longer overrides fused scores.
+        # winner_idx already set correctly by confidence_check above.
         conf_flag  = "ACOUSTIC_TIEBREAKER"
 
     # ── GOLDEN SELECTION ─────────────────────────────────────────────

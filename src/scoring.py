@@ -1,4 +1,6 @@
 import torch
+import re
+import math
 from sentence_transformers import SentenceTransformer
 from jiwer import wer as jwer, cer as jcer
 from config import *
@@ -43,18 +45,40 @@ def get_cer_scores(norm_candidates, norm_ref):
 
 
 def normalize_per_sample(scores):
-    # Normalize within this row's candidates ONLY — never globally.
-    # Global normalization: one outlier row compresses all other rows' variance.
-    mn, mx = min(scores), max(scores)
-    if mx == mn:
-        return [1.0] * len(scores)
-    return [(s - mn) / (mx - mn) for s in scores]
+    # Max-only scaling — preserves relative differences between candidates.
+    # Min-max was collapsing all good options to ~1.0, destroying epsilon.
+    mx = max(scores)
+    if mx == 0:
+        return [0.0] * len(scores)
+    return [s / mx for s in scores]
+
+
+def verbosity_penalty(candidate_text, all_texts):
+    lengths = [len(t.replace(' ', '')) for t in all_texts if len(t.replace(' ', '')) > 50]
+    if not lengths:
+        return 1.0
+    median_len = sorted(lengths)[len(lengths) // 2]
+    candidate_len = len(candidate_text.replace(' ', ''))
+    R = candidate_len / median_len if median_len > 0 else 1.0
+    if R <= 1.5:
+        return 1.0
+    return math.exp(-(R - 1.5))
+
+
+def format_penalty(raw_text):
+    penalty = 1.0
+    if re.search(r'\{[^}]*\}', str(raw_text)):
+        penalty *= 0.95
+    if re.search(r'(?:^|\n)\s*[\u0600-\u06FFa-zA-Z]{1,15}:', str(raw_text)):
+        penalty *= 0.88
+    return penalty
 
 
 def fuse(A, S, C, whisper_quality):
     # A has already been penalized then normalized before this call.
     # Penalties are NOT re-applied here.
     # Whisper quality gate uses AND logic — see aligner_module.py.
+    # Weights: 0.40 acoustic / 0.30 semantic / 0.30 CER
     use_whisper = whisper_quality in ("OK", "LOW_LOGPROB", "NO_SPEECH")
 
     final = []

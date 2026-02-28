@@ -4,16 +4,16 @@ ALIGNER_MODEL_PATH = "./Qwen3-ForcedAligner-0.6B"
 LABSE_MODEL        = "sentence-transformers/LaBSE"
 
 # ── Fusion weights ───────────────────────────────────────────────────
-W_ACOUSTIC = 0.60
-W_SEMANTIC = 0.25
-W_CER      = 0.15
+W_ACOUSTIC = 0.40
+W_SEMANTIC = 0.30
+W_CER      = 0.30
 
 # ── Confidence gate ──────────────────────────────────────────────────
 CONFIDENCE_THRESHOLD = 0.05
 
 # ── Whisper quality gates ─────────────────────────────────────────────
-LOGPROB_THRESHOLD   = -1.0
-NO_SPEECH_THRESHOLD = 0.50
+LOGPROB_THRESHOLD   = -1.5
+NO_SPEECH_THRESHOLD = 0.65
 
 # ── Paths ─────────────────────────────────────────────────────────────
 AUDIO_DIR     = "data/audio/"
