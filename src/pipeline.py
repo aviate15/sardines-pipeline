@@ -2,6 +2,7 @@ import pandas as pd
 import os
 import sys
 sys.path.insert(0, os.path.dirname(__file__))
+sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 
 from preprocess     import load_csv, normalize_text, flag_bad_options, download_audio
 from aligner_module import (load_whisper, load_aligner, get_whisper_ref,
