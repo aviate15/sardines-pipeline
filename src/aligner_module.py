@@ -248,12 +248,18 @@ def get_alignment_score(audio_id, candidate_text, model, cache):
         save_cache(cache, ALIGNER_CACHE)
         return 0.0
 
+    # Cap text length — TRUNCATED options are 32,767 chars long.
+    # Passing that to the aligner creates a 35GB+ attention matrix → OOM.
+    # 1000 chars covers ~100 Arabic words, more than any audio clip here.
+    aligner_text = candidate_text[:1000]
+
     try:
-        results = model.align(
-            audio=path,
-            text=candidate_text,
-            language="ar"   # ← if smoke test says use "ar", change here
-        )
+        with torch.no_grad():
+            results = model.align(
+                audio=path,
+                text=aligner_text,
+                language="Arabic"
+            )
 
         # Guard against both failure modes:
         # [] — model returned empty list (no alignment at all)
