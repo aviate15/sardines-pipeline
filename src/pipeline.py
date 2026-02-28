@@ -138,6 +138,9 @@ def process_row(row, whisper_model, al_model, labse_model, w_cache, a_cache):
 
 def _build_result(audio_id, row, raw_opts, golden, wer_out, cer_out,
                   conf_flag, epsilon, w_quality, final_scores):
+    # Sanitize newlines from raw options — 441 rows have embedded \n
+    # that break CSV row boundaries when written unescaped
+    raw_opts = [str(o).replace('\n', ' ').replace('\r', ' ') for o in raw_opts]
     return {
         "audio_id":        audio_id,
         "language":        row['language'],
