@@ -124,7 +124,6 @@ def load_aligner():
             dtype=torch.bfloat16 if torch.cuda.is_available() else torch.float32,
             device_map=device
         )
-        model.eval()
         
         print("[Aligner] Qwen3ForcedAligner loaded OK")
         return model
