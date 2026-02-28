@@ -274,7 +274,7 @@ def get_alignment_score(audio_id, candidate_text, model, cache):
 
         segments = results[0]
         aligned_chars = sum(len(r.text) for r in segments)
-        total_chars   = len(candidate_text.replace(' ', ''))
+        total_chars   = len(aligner_text.replace(' ', ''))
         score = min(1.0, aligned_chars / total_chars) if total_chars > 0 else 0.0
         score = max(0.0, min(1.0, score))
 

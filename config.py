@@ -9,7 +9,7 @@ W_SEMANTIC = 0.25
 W_CER      = 0.15
 
 # ── Confidence gate ──────────────────────────────────────────────────
-CONFIDENCE_THRESHOLD = 0.15
+CONFIDENCE_THRESHOLD = 0.05
 
 # ── Whisper quality gates ─────────────────────────────────────────────
 LOGPROB_THRESHOLD   = -1.0
