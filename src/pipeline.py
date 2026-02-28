@@ -7,12 +7,10 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(__file__)))
 from preprocess     import load_csv, normalize_text, flag_bad_options, download_audio
 from aligner_module import (load_whisper, load_aligner, get_whisper_ref,
                              get_alignment_score, load_cache, save_cache)
-from scoring        import (load_labse, get_semantic_scores, get_cer_scores,
-                             normalize_per_sample, fuse, confidence_check,
-                             acoustic_tiebreaker, compute_wer_cer,
-                             verbosity_penalty, format_penalty)
-                             normalize_per_sample, fuse, confidence_check,
-                             acoustic_tiebreaker, compute_wer_cer)
+from scoring import (load_labse, get_semantic_scores, get_cer_scores,
+                     normalize_per_sample, fuse, confidence_check,
+                     acoustic_tiebreaker, compute_wer_cer,
+                     verbosity_penalty, format_penalty)
 from config import *
 
 
