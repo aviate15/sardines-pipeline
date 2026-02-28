@@ -260,13 +260,13 @@ def get_alignment_score(audio_id, candidate_text, model, cache):
         # [[]] — model returned list containing empty list (aligned but no segments)
         # Both are treated as neutral 0.5 to avoid incorrectly eliminating
         # a valid candidate due to an aligner failure, not a text failure.
-        if not results or not results[0].items:
+        if not results or not results[0]:
             print(f"[WARN] Aligner empty result id={audio_id} — returning 0.5 neutral")
             cache[key] = 0.5
             save_cache(cache, ALIGNER_CACHE)
             return 0.5
 
-        segments = results[0].items
+        segments = results[0]
         aligned_chars = sum(len(r.text) for r in segments)
         total_chars   = len(candidate_text.replace(' ', ''))
         score = min(1.0, aligned_chars / total_chars) if total_chars > 0 else 0.0
