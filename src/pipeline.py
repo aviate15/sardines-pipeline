@@ -144,6 +144,7 @@ def _build_result(audio_id, row, raw_opts, golden, wer_out, cer_out,
     # Sanitize newlines from raw options — 441 rows have embedded \n
     # that break CSV row boundaries when written unescaped
     raw_opts = [str(o).replace('\n', ' ').replace('\r', ' ') for o in raw_opts]
+    golden = str(golden).replace('\n', ' ').replace('\r', ' ')
     return {
         "audio_id":        audio_id,
         "language":        row['language'],
