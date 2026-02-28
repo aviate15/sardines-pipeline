@@ -25,7 +25,7 @@ def get_semantic_scores(norm_candidates, norm_ref, labse_model):
     # Note: LaBSE cosine sims are typically 0.5–0.95 in practice,
     # so after shifting the effective range is ~0.75–0.97.
     # This compresses the semantic signal somewhat but does not break it.
-    return [float(ref_emb @ e) for e in embs[1:]]
+    return [max(0.0, float(ref_emb @ e)) for e in embs[1:]]
 
 
 def get_cer_scores(norm_candidates, norm_ref):
@@ -93,16 +93,22 @@ def fuse(A, S, C, whisper_quality):
     return final
 
 
-def confidence_check(scores, cer_scores=None):
+def confidence_check(scores, cer_scores=None, acoustic_scores=None):
     ranked     = sorted(enumerate(scores), key=lambda x: x[1], reverse=True)
     winner_idx = ranked[0][0]
     epsilon    = ranked[0][1] - ranked[1][1]
-    # Secondary tiebreaker: if epsilon is exactly 0, use lowest CER
-    if epsilon == 0.0 and cer_scores is not None:
+    if epsilon == 0.0:
         max_score = ranked[0][1]
         tied = [i for i, s in enumerate(scores) if abs(s - max_score) < 0.0001]
-        if len(tied) > 1:
-            winner_idx = min(tied, key=lambda i: (1.0 - cer_scores[i]))
+        if len(tied) > 1 and cer_scores is not None:
+            best_cer = max(cer_scores[i] for i in tied)
+            cer_tied = [i for i in tied if abs(cer_scores[i] - best_cer) < 0.0001]
+            if len(cer_tied) == 1:
+                winner_idx = cer_tied[0]
+            elif acoustic_scores is not None:
+                winner_idx = max(cer_tied, key=lambda i: acoustic_scores[i])
+        elif len(tied) > 1 and acoustic_scores is not None:
+            winner_idx = max(tied, key=lambda i: acoustic_scores[i])
     return winner_idx, epsilon, epsilon >= CONFIDENCE_THRESHOLD
 
 

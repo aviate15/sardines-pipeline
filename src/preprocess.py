@@ -25,6 +25,9 @@ def normalize_text(text):
     # Strip [المتحدث ١:] bracket speaker labels — 21 confirmed occurrences
     text = re.sub(r'\[[^\]]*\]', '', text)
 
+    # Strip (يضحك) (متوترة) parenthetical stage directions — 181 confirmed occurrences
+    text = re.sub(r'\([^)]*\)', '', text)
+
     # Replace newlines with space — 87+ rows confirmed
     # Deleting merges words incorrectly; replacing preserves word boundaries
     text = text.replace('\n', ' ').replace('\r', ' ')
