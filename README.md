@@ -110,9 +110,7 @@ Input CSV (100 rows × 5 candidates)
 
 ### Prerequisites
 
-- Python 3.9+
-- CUDA-capable GPU recommended (pipeline runs on CPU but is slower)
-- ~10 GB disk space for models
+- Before running anything, read [ALL_PREREQUISITES.txt](./ALL_PREREQUISITES.txt) and make sure every item in it is installed on your machine.
 
 ### Installation
 
