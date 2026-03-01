@@ -25,7 +25,7 @@ def get_semantic_scores(norm_candidates, norm_ref, labse_model):
     # Note: LaBSE cosine sims are typically 0.5–0.95 in practice,
     # so after shifting the effective range is ~0.75–0.97.
     # This compresses the semantic signal somewhat but does not break it.
-    return [max(0.0, float(ref_emb @ e)) for e in embs[1:]]
+    return [max(0.0, (float(ref_emb @ e) + 1.0) / 2.0) for e in embs[1:]]
 
 
 def get_cer_scores(norm_candidates, norm_ref):
@@ -128,9 +128,9 @@ def acoustic_tiebreaker(A_raw, flags):
     for i, a in enumerate(A_raw):
         if flags[i] == 'TRUNCATED':
             adjusted.append(a * 0.7)
-        elif flags[i] == 'HEADER_LEAK':
-            adjusted.append(a * 0.5)
         else:
+            # HEADER_LEAK: same logic as pipeline.py — normalize_text already
+            # cleaned the text before scoring, so no penalty here either.
             adjusted.append(a)
     return max(range(len(adjusted)), key=lambda i: adjusted[i])
 
