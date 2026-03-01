@@ -70,8 +70,10 @@ def process_row(row, whisper_model, al_model, labse_model, w_cache, a_cache):
     for i, a in enumerate(A_raw):
         if flags[i] == 'TRUNCATED':
             A_penalized.append(a * 0.7)
-        elif flags[i] == 'HEADER_LEAK':
-            A_penalized.append(a * 0.5)
+            # HEADER_LEAK falls here intentionally.
+            # normalize_text already stripped the header before the aligner ran.
+            # The aligner scored clean text — applying 0.5 here would penalize
+            # a signal that was never corrupted. ids 33 and 48 depend on this.
         else:
             fp = format_penalty(raw_opts[i])
             vp = verbosity_penalty(raw_opts[i], raw_opts)
