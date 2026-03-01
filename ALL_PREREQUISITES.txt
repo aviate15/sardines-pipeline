@@ -1,0 +1,260 @@
+================================================================
+SARDINES PIPELINE — COMPLETE PREREQUISITES (INSTALL EVERYTHING)
+================================================================
+Hackenza 2026 · Renan Partners · Team sardines
+================================================================
+
+This file lists EVERY single thing that must be installed on the
+machine before the pipeline can run. Nothing is assumed.
+
+================================================================
+SECTION 1 — HARDWARE REQUIREMENTS
+================================================================
+
+- 64-bit CPU (x64 or arm64)
+- Minimum 8 GB RAM (16 GB recommended)
+- Minimum 10 GB free disk space (15 GB recommended)
+  - Qwen3-ForcedAligner-0.6B model:       ~1.84 GB
+  - Whisper large-v3-turbo model:          ~1.5 GB
+  - LaBSE model:                           ~1.8 GB
+  - wav2vec2-large-xlsr-53-arabic model:   ~1.18 GB (fallback, auto)
+  - Audio files (100 x ~1-3 MB):           ~200 MB
+  - Cache, output files, working space:    ~1 GB
+
+GPU (strongly recommended — CPU-only is 8+ hours for 100 rows):
+- NVIDIA GPU with minimum 4 GB VRAM (6 GB+ recommended)
+  - Whisper large-v3-turbo uses ~1.5 GB VRAM
+  - Qwen3-ForcedAligner-0.6B uses ~1.84 GB VRAM
+  - LaBSE uses ~400 MB VRAM
+  - If only 4 GB VRAM: change WHISPER_MODEL to "medium" in config.py
+- Apple Silicon M1/M2 Macs: use MPS (Metal) — no CUDA needed
+- CPU-only machines: pipeline still works but is very slow
+
+================================================================
+SECTION 2 — SYSTEM-LEVEL SOFTWARE (install before pip)
+================================================================
+These are NOT Python packages. Install at the OS level first.
+
+----------------------------------------------------------------
+2.1  Python 3.10 or 3.11  (64-bit)
+----------------------------------------------------------------
+Required version: 3.9, 3.10, or 3.11 (3.10 or 3.11 recommended)
+Do NOT use Python 3.12+ — openai-whisper and ctc-forced-aligner
+have known compatibility issues with it.
+
+Windows:   Download installer from https://www.python.org/downloads/
+           During install: CHECK "Add Python to PATH"
+macOS:     brew install python@3.11
+           OR download from https://www.python.org/downloads/
+Linux:     sudo apt install python3.11 python3.11-pip python3.11-venv
+
+Verify:    python --version
+Expected:  Python 3.10.x or 3.11.x
+
+----------------------------------------------------------------
+2.2  pip  (Python package manager)
+----------------------------------------------------------------
+Comes bundled with Python on Windows and macOS.
+
+Linux:     sudo apt install python3-pip
+
+Verify:    pip --version
+
+----------------------------------------------------------------
+2.3  FFmpeg  *** CRITICAL — pipeline WILL NOT RUN without this ***
+----------------------------------------------------------------
+Required by openai-whisper to decode audio files.
+Without FFmpeg, Whisper cannot load or process any audio at all.
+
+Windows:
+  1. Download from https://www.gyan.dev/ffmpeg/builds/
+     (choose "ffmpeg-release-essentials.zip")
+  2. Extract the zip file
+  3. Copy the contents of the bin/ folder (ffmpeg.exe, ffprobe.exe,
+     ffplay.exe) to a new folder, e.g. C:\ffmpeg\bin\
+  4. Add C:\ffmpeg\bin\ to your system PATH:
+     - Search "Edit the system environment variables" in Start
+     - Click "Environment Variables"
+     - Under "System variables", find "Path", click Edit
+     - Click New, paste: C:\ffmpeg\bin\
+     - Click OK on all dialogs
+  5. Close all Command Prompt windows and open a new one
+
+macOS:     brew install ffmpeg
+
+Linux:     sudo apt install ffmpeg
+           (Fedora: sudo dnf install ffmpeg)
+
+Verify:    ffmpeg -version
+Expected:  version info. If "command not found" = not in PATH.
+
+----------------------------------------------------------------
+2.4  Git
+----------------------------------------------------------------
+Required to clone the repository.
+
+Windows:   Download from https://git-scm.com/download/win
+           Run installer, use all defaults
+macOS:     Pre-installed. If not: brew install git
+Linux:     sudo apt install git
+
+Verify:    git --version
+
+----------------------------------------------------------------
+2.5  libsndfile  (Linux ONLY — not needed on Windows or macOS)
+----------------------------------------------------------------
+Required by the soundfile Python package (used by ctc-forced-aligner).
+On Windows and macOS this is bundled automatically — skip this step.
+
+Linux:     sudo apt install libsndfile1
+Fedora:    sudo dnf install libsndfile
+
+Verify:    python -c "import soundfile; print('soundfile OK')"
+
+----------------------------------------------------------------
+2.6  C++ Build Tools  (required to compile some Python packages)
+----------------------------------------------------------------
+Some packages (ctc-forced-aligner, torchaudio) require a C++
+compiler during pip install. Without this you will get:
+"Microsoft Visual C++ 14.0 or greater is required"
+
+Windows:
+  1. Go to https://visualstudio.microsoft.com/visual-cpp-build-tools/
+  2. Download and run the Build Tools installer
+  3. In the installer, check "Desktop development with C++"
+  4. Click Install (~3-5 GB download)
+  5. Restart your machine after installation completes
+
+macOS:     xcode-select --install
+           (Run in Terminal, click Install in the popup)
+
+Linux:     sudo apt install build-essential
+Fedora:    sudo dnf groupinstall "Development Tools"
+
+----------------------------------------------------------------
+2.7  CUDA Toolkit 12.1  (NVIDIA GPU machines ONLY)
+----------------------------------------------------------------
+Required for GPU acceleration on NVIDIA cards.
+Skip this entirely if you are on CPU-only or Apple Silicon Mac.
+
+1. Update NVIDIA driver to version 530.x or higher
+   Download from: https://www.nvidia.com/Download/index.aspx
+
+2. Install CUDA Toolkit 12.1:
+   Download from: https://developer.nvidia.com/cuda-12-1-0-download-archive
+   Run the installer, use all defaults
+
+3. Install cuDNN (optional but recommended):
+   Download from: https://developer.nvidia.com/cudnn
+   Requires free NVIDIA developer account
+
+Verify:    nvcc --version
+Expected:  Cuda compilation tools, release 12.1
+
+================================================================
+SECTION 3 — PYTHON PACKAGES  (install via pip)
+================================================================
+After all Section 2 items are installed, run:
+
+    pip install -r requirements.txt
+
+Then, if you have an NVIDIA GPU, ALSO run this line to get the
+CUDA-enabled PyTorch (this replaces the CPU version):
+
+    pip install torch torchvision torchaudio --index-url https://download.pytorch.org/whl/cu121
+
+Full list of pip packages:
+
+openai-whisper        # Whisper large-v3-turbo — reference transcription + audio quality signal
+torch                 # Core deep learning framework
+torchvision           # Required by PyTorch ecosystem (part of the standard torch trio)
+torchaudio            # WAV loading, 16kHz resampling, mono conversion
+transformers          # Hugging Face model loading (LaBSE, Qwen3, wav2vec2)
+accelerate            # Required by transformers for model loading
+sentence-transformers # LaBSE semantic similarity scoring
+huggingface_hub       # snapshot_download for Qwen3-ForcedAligner-0.6B
+qwen-asr              # Primary forced aligner: Qwen3-ForcedAligner-0.6B
+ctc-forced-aligner    # Fallback forced aligner: wav2vec2-large-xlsr-53-arabic
+jiwer                 # WER and CER computation
+pandas                # CSV I/O
+numpy                 # Numerical operations
+requests              # Downloading audio files from URLs
+soundfile             # WAV I/O used by ctc-forced-aligner
+anthropic             # Anthropic API (listed in project requirements)
+
+================================================================
+SECTION 4 — ML MODELS  (download separately, not via pip)
+================================================================
+
+----------------------------------------------------------------
+4.1  Qwen3-ForcedAligner-0.6B  *** MUST DOWNLOAD MANUALLY ***
+----------------------------------------------------------------
+Size:        ~1.84 GB
+Must be at:  ./Qwen3-ForcedAligner-0.6B/  inside project root
+
+Download command (run inside project folder):
+  python -c "from huggingface_hub import snapshot_download; snapshot_download('Qwen/Qwen3-ForcedAligner-0.6B', local_dir='./Qwen3-ForcedAligner-0.6B')"
+
+Do not interrupt — wait for all files to finish downloading.
+
+----------------------------------------------------------------
+4.2  Whisper large-v3-turbo  (downloads automatically on first run)
+----------------------------------------------------------------
+Size:          ~1.5 GB
+Downloaded by: whisper.load_model("large-v3-turbo") on first run
+Cache location (Windows): C:\Users\<you>\.cache\whisper\
+Cache location (macOS/Linux): ~/.cache/whisper/
+No manual action required.
+
+If 4 GB VRAM and getting out-of-memory error:
+  Open config.py, change WHISPER_MODEL = "large-v3-turbo"
+  to WHISPER_MODEL = "medium"
+
+----------------------------------------------------------------
+4.3  LaBSE  (downloads automatically on first run)
+----------------------------------------------------------------
+Size:          ~1.8 GB
+Downloaded by: SentenceTransformer("sentence-transformers/LaBSE")
+Cache location: ~/.cache/huggingface/hub/  (all platforms)
+No manual action required.
+
+----------------------------------------------------------------
+4.4  wav2vec2-large-xlsr-53-arabic  (downloads automatically if needed)
+----------------------------------------------------------------
+Size:          ~1.18 GB
+Trigger:       Only if Qwen3-ForcedAligner fails to load (auto fallback)
+No manual action required.
+
+================================================================
+SECTION 5 — VERIFY EVERYTHING IS READY
+================================================================
+Run these commands after installation to confirm all is working:
+
+python --version
+  Expected: Python 3.10.x or 3.11.x
+
+ffmpeg -version
+  Expected: version info line
+
+python -c "import torch; print('CUDA:', torch.cuda.is_available())"
+  GPU machines expected: CUDA: True
+  CPU machines expected: CUDA: False
+
+python -c "import torch; print('MPS:', torch.backends.mps.is_available())"
+  Apple Silicon expected: MPS: True
+
+python -c "import whisper, torchaudio, sentence_transformers, jiwer, pandas, transformers, qwen_asr, soundfile; print('All OK')"
+  Expected: All OK
+
+python -c "import os; print('Model folder:', os.path.isdir('./Qwen3-ForcedAligner-0.6B'))"
+  Expected: Model folder: True
+
+python -c "import pandas as pd; df = pd.read_csv('data/input.csv', encoding='utf-8-sig'); print('CSV rows:', len(df))"
+  Expected: CSV rows: 100
+
+================================================================
+END OF PREREQUISITES
+================================================================
+sardines — Hackenza 2026 — BITS Pilani, KK Birla Goa Campus
+Ansh Varma · Sana H · Darshan Rajagoli · Rashida Baldiwala
+================================================================
