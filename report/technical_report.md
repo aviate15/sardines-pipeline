@@ -1,5 +1,5 @@
 # Technical Report: Automated Golden Transcription Selection Pipeline
-### sardines — Hackenza 2026
+### sardines, Hackenza 2026
 ### BITS Pilani, KK Birla Goa Campus
 
 **Team:** Ansh Varma (2024A7PS0614G) · Sana H (2024A7PS0561G) · Darshan Rajagoli (2024ADPS0685G) · Rashida Baldiwala (2024A7PS0631G)
@@ -29,7 +29,7 @@
 
 ## 1. Executive Summary
 
-sardines built a fully automated, multi-signal pipeline to identify the single most accurate (golden) transcription from five divergent candidates for 100 Arabic (Saudi dialect) audio clips. The pipeline fuses three independent quality signals — forced acoustic alignment, multilingual semantic similarity, and character error rate against a Whisper-generated reference — into a single confidence-ranked score per candidate.
+sardines built a fully automated, multi-signal pipeline to identify the single most accurate (golden) transcription from five divergent candidates for 100 Arabic (Saudi dialect) audio clips. The pipeline fuses three independent quality signals, forced acoustic alignment, multilingual semantic similarity, and character error rate against a Whisper-generated reference, into a single confidence-ranked score per candidate.
 
 **Key results at a glance:**
 
@@ -65,13 +65,13 @@ The system must run without human intervention and must be robust to differences
 
 ## 3. Why Our Approach is Superior
 
-### 3.1 No Consensus Voting — Every Signal is Anchored to the Audio
+### 3.1 No Consensus Voting, Every Signal is Anchored to the Audio
 
 The most naive approach to this problem is majority voting: if three of five candidates share the same text, pick that one. This is mathematically unreliable. If three annotators share the same systematic transcription error, majority voting actively selects the wrong answer. Every signal in our pipeline is anchored independently to the raw audio waveform or to absolute linguistic quality. No candidate votes on another candidate.
 
 ### 3.2 Forced Alignment Directly Scores Audio-Text Correspondence
 
-Rather than having the model generate a transcription and then compare, we use a forced aligner to measure how well each existing candidate *fits* the audio at the character level. This gives a direct audio-text correspondence score that is reference-free — it does not require any ground truth or comparison transcription to work. This is the most principled possible acoustic signal.
+Rather than having the model generate a transcription and then compare, we use a forced aligner to measure how well each existing candidate *fits* the audio at the character level. This gives a direct audio-text correspondence score that is reference-free, it does not require any ground truth or comparison transcription to work. This is the most principled possible acoustic signal.
 
 ### 3.3 LaBSE Over GPT-2 Perplexity for Arabic
 
@@ -88,9 +88,9 @@ The pipeline is designed for practical execution within a hackathon window. Per-
 - **ForcedAligner**: O(L × T) where L = candidate length and T = audio length. Text is capped at 1,000 characters to prevent O(L² × T) attention explosion from truncated candidates.
 - **Whisper**: O(T) per audio clip, called once per clip (not per candidate). Result cached immediately.
 - **LaBSE**: O(5 × d) where d = embedding dimensionality. Batched across all 5 candidates simultaneously.
-- **CER**: O(nm) Levenshtein — negligible.
+- **CER**: O(nm) Levenshtein, negligible.
 
-All model outputs are JSON-cached after every row. A crash at row 73 loses no work — resuming starts from row 74. The complete 100-row run on two RTX 3050 machines (50 rows each, parallel) completed within the hackathon window.
+All model outputs are JSON-cached after every row. A crash at row 73 loses no work, resuming starts from row 74. The complete 100-row run on two RTX 3050 machines (50 rows each, parallel) completed within the hackathon window.
 
 ### 3.6 Parallelism Across Machines
 
@@ -201,11 +201,11 @@ Before any scoring, all candidate transcriptions were cleaned and flagged by `pr
 
 ### 5.2 Normalization Pipeline
 
-The `normalize_text()` function applies all cleaning steps in order. Critically, it is deterministic: calling `normalize_text(normalize_text(s)) == normalize_text(s)` for any string `s`. This is verified at runtime via a self-WER assertion (`compute_wer_cer(golden_norm, golden_norm) == 0.0`) on every processed row. If this assertion ever fires, the pipeline halts immediately — a silent non-determinism in normalization would produce wrong WER values for every row silently.
+The `normalize_text()` function applies all cleaning steps in order. Critically, it is deterministic: calling `normalize_text(normalize_text(s)) == normalize_text(s)` for any string `s`. This is verified at runtime via a self-WER assertion (`compute_wer_cer(golden_norm, golden_norm) == 0.0`) on every processed row. If this assertion ever fires, the pipeline halts immediately, a silent non-determinism in normalization would produce wrong WER values for every row silently.
 
 ### 5.3 TRUNCATED Options
 
-Excel imposes a 32,767-character cell limit. 51 transcription options in the dataset hit this exact limit, meaning they were silently truncated mid-sentence by the spreadsheet software. These options cannot score well against the audio because they are incomplete by definition. We apply a 0.7 acoustic penalty multiplicatively to the raw alignment score before normalization, ensuring TRUNCATED options are structurally disadvantaged but not eliminated — if all five options are truncated (which was checked), penalties cancel out in normalization and we fall back to pure raw acoustic score.
+Excel imposes a 32,767-character cell limit. 51 transcription options in the dataset hit this exact limit, meaning they were silently truncated mid-sentence by the spreadsheet software. These options cannot score well against the audio because they are incomplete by definition. We apply a 0.7 acoustic penalty multiplicatively to the raw alignment score before normalization, ensuring TRUNCATED options are structurally disadvantaged but not eliminated, if all five options are truncated (which was checked), penalties cancel out in normalization and we fall back to pure raw acoustic score.
 
 ### 5.4 HEADER\_LEAK Options
 
@@ -219,7 +219,7 @@ Audio files were downloaded via HTTPS from CloudFront with 0.5s inter-request de
 
 ## 6. Scoring Methodology
 
-### 6.1 Signal 1 — Forced Acoustic Alignment (Weight: 0.40)
+### 6.1 Signal 1, Forced Acoustic Alignment (Weight: 0.40)
 
 **Model:** Qwen3-ForcedAligner-0.6B (primary); wav2vec2-large-xlsr-53-arabic via ctc-forced-aligner (fallback if Qwen fails to load)
 
@@ -233,7 +233,7 @@ A_raw = min(1.0, aligned_chars / total_chars_in_candidate)
 
 Where `aligned_chars` is the sum of character lengths of all segments successfully aligned, and `total_chars_in_candidate` is the character count of the input text (spaces excluded).
 
-**Text cap:** Candidates are capped at 1,000 characters before alignment. TRUNCATED options reach 32,767 characters — passing this to the aligner would produce a 35GB+ attention matrix and cause OOM. 1,000 characters covers approximately 100 Arabic words, well above any plausible audio clip length in this dataset.
+**Text cap:** Candidates are capped at 1,000 characters before alignment. TRUNCATED options reach 32,767 characters, passing this to the aligner would produce a 35GB+ attention matrix and cause OOM. 1,000 characters covers approximately 100 Arabic words, well above any plausible audio clip length in this dataset.
 
 **Penalties applied before normalization:**
 
@@ -241,7 +241,7 @@ Where `aligned_chars` is the sum of character lengths of all segments successful
 - Verbosity penalty: Exponential decay if candidate is >1.5× median length: `exp(-(R - 1.5))` where `R = candidate_len / median_len`
 - Format penalty: 5% reduction for curly-brace stage directions still present in raw text; 12% reduction for speaker-label formatting (e.g., `"لينا:"` patterns)
 
-Penalties are applied to raw scores before normalization. This preserves proportional impact — applying penalties after normalization would operate on relative rank scores [0,1] rather than acoustic confidence values.
+Penalties are applied to raw scores before normalization. This preserves proportional impact, applying penalties after normalization would operate on relative rank scores [0,1] rather than acoustic confidence values.
 
 ### 6.2 Whisper Reference Generation
 
@@ -262,9 +262,9 @@ Whisper is called once per audio clip with `language="ar"` forced (without this,
 | `no_speech_prob > 0.65` only | `NO_SPEECH` → keep Whisper |
 | Neither | `OK` → keep Whisper |
 
-AND logic is used intentionally. OR logic would discard Whisper on Arabic clips that have high `no_speech_prob` due to leading silence before speech begins — a common occurrence. In our dataset, all 100 clips received quality `OK`, meaning the Whisper reference was used in all fused scores.
+AND logic is used intentionally. OR logic would discard Whisper on Arabic clips that have high `no_speech_prob` due to leading silence before speech begins, a common occurrence. In our dataset, all 100 clips received quality `OK`, meaning the Whisper reference was used in all fused scores.
 
-### 6.3 Signal 2 — LaBSE Semantic Similarity (Weight: 0.30)
+### 6.3 Signal 2, LaBSE Semantic Similarity (Weight: 0.30)
 
 **Model:** sentence-transformers/LaBSE
 
@@ -281,11 +281,11 @@ LaBSE is preferred over GPT-2 perplexity for this task because:
 - It handles Saudi dialect Arabic natively.
 - It produces a similarity score relative to the reference rather than an absolute fluency score, making it naturally calibrated for candidate ranking.
 
-### 6.4 Signal 3 — Character Error Rate (Weight: 0.30)
+### 6.4 Signal 3, Character Error Rate (Weight: 0.30)
 
 **Library:** jiwer
 
-CER measures character-level Levenshtein distance between the normalized candidate and the normalized Whisper reference. We use CER rather than WER for the scoring signal because Arabic morphology attaches prefixes and suffixes to roots — a single "wrong word" in WER terms may differ from the correct form by only one or two characters.
+CER measures character-level Levenshtein distance between the normalized candidate and the normalized Whisper reference. We use CER rather than WER for the scoring signal because Arabic morphology attaches prefixes and suffixes to roots, a single "wrong word" in WER terms may differ from the correct form by only one or two characters.
 
 ```
 C_i = max(0.0, 1.0 - min(jiwer.cer(ref_norm, cand_i_norm), 1.0))
@@ -333,13 +333,13 @@ When `ε < 0.05`, two sub-cases apply:
 
 **(a) 0 < ε < 0.05 (ACOUSTIC\_TIEBREAKER flag):** The fused argmax winner is retained as-is. No additional signal is consulted. The flag is set to `ACOUSTIC_TIEBREAKER` to record the low-margin status for downstream review.
 
-**(b) ε = 0.0 exactly (perfect tie in fused scores):** The raw CER scores break the tie first. If those are also tied, raw acoustic scores (`A_raw`, pre-penalty and pre-normalization) decide. This logic runs entirely inside `confidence_check()` and is deterministic — no row can be left unresolved.
+**(b) ε = 0.0 exactly (perfect tie in fused scores):** The raw CER scores break the tie first. If those are also tied, raw acoustic scores (`A_raw`, pre-penalty and pre-normalization) decide. This logic runs entirely inside `confidence_check()` and is deterministic, no row can be left unresolved.
 
 The tiebreaker is deterministic, runs locally, requires no API calls, and completes in microseconds.
 
 ### 7.4 WER Output Computation
 
-Once the golden is selected, WER for all five candidates is computed via `jiwer.wer(golden_norm, candidate_norm)`. The golden candidate's own WER is hardcoded to 0.0 and verified by a runtime assertion. WER argument order: reference first, hypothesis second — denominator is reference (golden) word count.
+Once the golden is selected, WER for all five candidates is computed via `jiwer.wer(golden_norm, candidate_norm)`. The golden candidate's own WER is hardcoded to 0.0 and verified by a runtime assertion. WER argument order: reference first, hypothesis second, denominator is reference (golden) word count.
 
 ---
 
@@ -359,7 +359,7 @@ The pipeline was split across two machines with CUDA GPUs (RTX 3050) to reduce w
 
 ### 8.3 Aligner Fallback Chain
 
-If Qwen3-ForcedAligner fails to load (import error, VRAM shortage, or corrupt weights), the pipeline automatically falls back to `CTCFallbackAligner`, which wraps `wav2vec2-large-xlsr-53-arabic` via the `ctc-forced-aligner` library. Both aligners expose the same `.align(audio, text, language)` interface, so `get_alignment_score()` is unaware of which backend is running. If both fail, a hard `RuntimeError` is raised immediately with actionable error messages — the pipeline does not proceed silently with a dead acoustic signal.
+If Qwen3-ForcedAligner fails to load (import error, VRAM shortage, or corrupt weights), the pipeline automatically falls back to `CTCFallbackAligner`, which wraps `wav2vec2-large-xlsr-53-arabic` via the `ctc-forced-aligner` library. Both aligners expose the same `.align(audio, text, language)` interface, so `get_alignment_score()` is unaware of which backend is running. If both fail, a hard `RuntimeError` is raised immediately with actionable error messages, the pipeline does not proceed silently with a dead acoustic signal.
 
 ### 8.4 Empty Aligner Results
 
@@ -382,7 +382,7 @@ self_wer, _ = compute_wer_cer(golden_norm, golden_norm)
 assert self_wer == 0.0
 ```
 
-This assertion does not check the hardcoded 0.0 constant — it actually runs `normalize_text` twice on the same string and verifies the full WER pipeline end-to-end. If `normalize_text` is ever non-deterministic (producing different output on consecutive calls with the same input), this assertion catches it with a clear error message and halts the pipeline rather than writing incorrect WER values silently.
+This assertion does not check the hardcoded 0.0 constant, it actually runs `normalize_text` twice on the same string and verifies the full WER pipeline end-to-end. If `normalize_text` is ever non-deterministic (producing different output on consecutive calls with the same input), this assertion catches it with a clear error message and halts the pipeline rather than writing incorrect WER values silently.
 
 ---
 
@@ -396,7 +396,7 @@ All 100 rows were processed without errors. No rows were dropped. No rows trigge
 
 The hackathon judge released the official correct option for the first **49** audio clips (audio\_ids 1–49; audio\_id 50 has no released label). This allows a direct, ground-truth evaluation of pipeline accuracy.
 
-**Overall Result: 39 / 49 correct — 79.6% accuracy.**
+**Overall Result: 39 / 49 correct, 79.6% accuracy.**
 
 #### Methodology
 
@@ -413,7 +413,7 @@ For each of the 49 released rows, the judge's `correct_option` field designates 
 | HIGH\_CONFIDENCE rows (correct / total) | 4 / 5 (80.0%) |
 | ACOUSTIC\_TIEBREAKER rows (correct / total) | 35 / 44 (79.5%) |
 
-One HIGH\_CONFIDENCE row (audio\_id 1) was incorrect — the pipeline selected option 2 with a large margin (ε = 0.054), but the judge designated option 1. Nine of the ten errors occurred in the ACOUSTIC\_TIEBREAKER regime.
+One HIGH\_CONFIDENCE row (audio\_id 1) was incorrect, the pipeline selected option 2 with a large margin (ε = 0.054), but the judge designated option 1. Nine of the ten errors occurred in the ACOUSTIC\_TIEBREAKER regime.
 
 #### Judge Distribution vs. Our Distribution (Rows 1–49)
 
@@ -442,9 +442,9 @@ The pipeline over-selects option 3 (14 vs 9) and under-selects options 1 and 2 r
 | 33 | Option 3 | Option 2 | 0.0938 | ACOUSTIC\_TIEBREAKER |
 | 48 | Option 4 | Option 2 | 0.0233 | ACOUSTIC\_TIEBREAKER |
 
-The "WER(judge's option vs our golden)" column measures how much the judge's designated option differs from our selected golden transcription. A value of 0.000 means both options are textually equivalent — that is a genuine ambiguity case. All other values represent genuine mismatches where the pipeline selected a textually distinct option from the judge's intended answer.
+The "WER(judge's option vs our golden)" column measures how much the judge's designated option differs from our selected golden transcription. A value of 0.000 means both options are textually equivalent, that is a genuine ambiguity case. All other values represent genuine mismatches where the pipeline selected a textually distinct option from the judge's intended answer.
 
-Only **1 of the 10 errors** (audio\_id 9) involves textually equivalent options (WER = 0.0 between our pick and the judge's). The remaining **9 errors are genuine mismatches** — the pipeline selected a transcription that materially differs from the judge's correct answer. This cannot be explained as label ambiguity; the pipeline made incorrect selections on these rows.
+Only **1 of the 10 errors** (audio\_id 9) involves textually equivalent options (WER = 0.0 between our pick and the judge's). The remaining **9 errors are genuine mismatches**, the pipeline selected a transcription that materially differs from the judge's correct answer. This cannot be explained as label ambiguity; the pipeline made incorrect selections on these rows.
 
 Audio\_id 1 is a notable case: despite being in HIGH\_CONFIDENCE (ε = 0.054), the pipeline's selection was wrong, indicating the forced aligner had high confidence in an incorrect alignment rather than a genuine quality difference.
 
@@ -463,7 +463,7 @@ The incorrect predictions score *higher* on average than correct ones (0.959 vs 
 | HIGH\_CONFIDENCE | 5 | ε ≥ 0.05: clear winner, large gap to runner-up |
 | ACOUSTIC\_TIEBREAKER | 95 | ε < 0.05: close margin, acoustic raw scores confirm |
 
-The high proportion of ACOUSTIC\_TIEBREAKER rows (95%) reflects the nature of this dataset. The five transcription candidates are human transcriptions of the same audio — highly similar text with small systematic differences (diacritics, formatting, minor word substitutions). The fused scores naturally cluster very close together. This is expected behavior, not a pipeline failure.
+The high proportion of ACOUSTIC\_TIEBREAKER rows (95%) reflects the nature of this dataset. The five transcription candidates are human transcriptions of the same audio, highly similar text with small systematic differences (diacritics, formatting, minor word substitutions). The fused scores naturally cluster very close together. This is expected behavior, not a pipeline failure.
 
 The five HIGH\_CONFIDENCE rows all had `ε ≥ 0.05`, indicating genuinely divergent transcription quality:
 
@@ -510,7 +510,7 @@ Once the golden is selected, WER is computed for all five candidates against it:
 | Min WER (best rejected) | 0.0000 (near-identical twin) |
 | Max WER (worst rejected) | 1.0000 |
 
-The mean WER of 0.2475 across rejected candidates indicates that the golden transcription meaningfully differs from the rejected ones — on average, one in four words in the rejected transcriptions is in error relative to the golden. This validates that the selection is making meaningful distinctions, not arbitrarily picking among near-identical options.
+The mean WER of 0.2475 across rejected candidates indicates that the golden transcription meaningfully differs from the rejected ones, on average, one in four words in the rejected transcriptions is in error relative to the golden. This validates that the selection is making meaningful distinctions, not arbitrarily picking among near-identical options.
 
 Row-level analysis of WER=0 across all five options:
 
@@ -556,7 +556,7 @@ ALL CHECKS PASSED. READY TO SUBMIT.
 
 ### 10.1 The Core Novelty: Audio-Anchored Independent Scoring
 
-The defining architectural decision in SARDINES is that every scoring signal is anchored to something external to the candidate set. No candidate is ever used as a reference to evaluate another candidate. This is not a minor implementation detail — it is the central design principle, and it distinguishes our approach from every naive or classical transcription selection strategy.
+The defining architectural decision in SARDINES is that every scoring signal is anchored to something external to the candidate set. No candidate is ever used as a reference to evaluate another candidate. This is not a minor implementation detail, it is the central design principle, and it distinguishes our approach from every naive or classical transcription selection strategy.
 
 Most teams approaching this problem will consider one or more of the following standard methods:
 
@@ -567,11 +567,11 @@ Most teams approaching this problem will consider one or more of the following s
 
 Each of these has a concrete, measurable failure mode on this specific dataset. SARDINES is designed to avoid all of them simultaneously.
 
-### 10.2 Why Cross-Referencing Fails — and Why We Are Faster
+### 10.2 Why Cross-Referencing Fails, and Why We Are Faster
 
 **The correctness argument:**
 
-Consider a dataset row where three of five annotators share the same systematic transcription error — for example, all three write "أكل الطعام" where the speaker actually said "أكل الكلام". Under pairwise cross-referencing, the erroneous version is the reference for itself and for the two other annotators who wrote the same thing. Its average WER against all five candidates will be low precisely because it has three near-identical copies agreeing with it. The two correct candidates will each have high average WER — they disagree with the majority. Cross-referencing selects the wrong answer by design.
+Consider a dataset row where three of five annotators share the same systematic transcription error, for example, all three write "أكل الطعام" where the speaker actually said "أكل الكلام". Under pairwise cross-referencing, the erroneous version is the reference for itself and for the two other annotators who wrote the same thing. Its average WER against all five candidates will be low precisely because it has three near-identical copies agreeing with it. The two correct candidates will each have high average WER, they disagree with the majority. Cross-referencing selects the wrong answer by design.
 
 This is not hypothetical for Gulf Arabic. The qāf/gāf alternation (ق vs. ق pronounced as /g/), the variation between Modern Standard Arabic and colloquial Gulf forms, and systematic elision patterns in fast speech all create conditions where multiple annotators from similar backgrounds will make the same error on the same word. On this 100-row dataset, these conditions are present.
 
@@ -598,7 +598,7 @@ Forced alignment: O(M × N) alignment calls
 = 100 × 5 = 500 alignment operations
 ```
 
-Cross-referencing with forced alignment would require aligning every candidate against every other candidate's audio-text pair — but since each candidate is text-only (not tied to a distinct audio), this path is not even well-defined for cross-referencing. The forced aligner scores text against audio, not text against text. Cross-referencing with a forced aligner would require a proxy, which reintroduces the Whisper dependency at N² scale. SARDINES uses Whisper exactly once per row, regardless of N.
+Cross-referencing with forced alignment would require aligning every candidate against every other candidate's audio-text pair, but since each candidate is text-only (not tied to a distinct audio), this path is not even well-defined for cross-referencing. The forced aligner scores text against audio, not text against text. Cross-referencing with a forced aligner would require a proxy, which reintroduces the Whisper dependency at N² scale. SARDINES uses Whisper exactly once per row, regardless of N.
 
 Additionally, our caching architecture ensures that each (audio\_id, candidate) alignment pair is computed at most once across the entire run. If the pipeline is restarted, no work is duplicated. Cross-referencing with N² pairs would be more expensive both at first run and on any restart.
 
@@ -614,7 +614,7 @@ Every component in the pipeline was selected for multilingual capability rather 
 
 - **Qwen3-ForcedAligner-0.6B** is a multilingual forced aligner trained on diverse language families. Its character-level alignment operates on Unicode directly, with no language-specific tokenization assumptions.
 - **wav2vec2-large-xlsr-53-arabic** (CTC fallback) was explicitly fine-tuned on Arabic, providing a dedicated fallback if the primary aligner fails on Arabic-specific phonemes.
-- **LaBSE** was trained on 109 languages with balanced multilingual data, meaning semantic similarity scores are calibrated equivalently across scripts and dialects — the same cosine threshold means the same thing in Arabic, Urdu, or French.
+- **LaBSE** was trained on 109 languages with balanced multilingual data, meaning semantic similarity scores are calibrated equivalently across scripts and dialects, the same cosine threshold means the same thing in Arabic, Urdu, or French.
 - **Whisper large-v3-turbo** supports 99 languages. The `language="ar"` parameter is set explicitly in `get_whisper_ref()` to prevent Saudi Arabic from being misdetected as Farsi, a real failure mode documented during development.
 - **Text normalization** in `preprocess.py` strips Unicode diacritics via `unicodedata.category` range checks rather than hardcoded character lists, making it extensible to other diacritic-heavy scripts (Devanagari, Hebrew, Persian).
 
@@ -624,13 +624,13 @@ To deploy on a new language, only two lines need changing: the `language` parame
 
 The pipeline handles degraded audio conditions at three independent layers:
 
-**Layer 1 — Whisper quality gate.** Every audio clip is assessed on `avg_logprob` and `no_speech_prob` before the Whisper transcript is used as a reference. If both thresholds are breached simultaneously (`avg_logprob < -1.5` AND `no_speech_prob > 0.65`), the pipeline drops the Whisper reference entirely and falls back to pure acoustic scoring (`score_i = A_i`). This prevents a hallucinated reference from corrupting both the semantic and CER signals on noisy audio. AND logic is used deliberately — OR logic would incorrectly drop Whisper on clips with leading silence, a common occurrence in this dataset.
+**Layer 1, Whisper quality gate.** Every audio clip is assessed on `avg_logprob` and `no_speech_prob` before the Whisper transcript is used as a reference. If both thresholds are breached simultaneously (`avg_logprob < -1.5` AND `no_speech_prob > 0.65`), the pipeline drops the Whisper reference entirely and falls back to pure acoustic scoring (`score_i = A_i`). This prevents a hallucinated reference from corrupting both the semantic and CER signals on noisy audio. AND logic is used deliberately, OR logic would incorrectly drop Whisper on clips with leading silence, a common occurrence in this dataset.
 
-**Layer 2 — Forced aligner neutral fallback.** When the aligner returns an empty alignment result (which occurs on very short audio, clipped recordings, or codec artifacts), the score is set to `0.5` neutral rather than `0.0`. A `0.0` would actively penalize a valid candidate due to an audio condition failure, not a transcription quality failure. The `0.5` value removes the acoustic signal's contribution for that candidate without distorting the fused ranking.
+**Layer 2, Forced aligner neutral fallback.** When the aligner returns an empty alignment result (which occurs on very short audio, clipped recordings, or codec artifacts), the score is set to `0.5` neutral rather than `0.0`. A `0.0` would actively penalize a valid candidate due to an audio condition failure, not a transcription quality failure. The `0.5` value removes the acoustic signal's contribution for that candidate without distorting the fused ranking.
 
-**Layer 3 — Aligner model fallback chain.** If the primary aligner (Qwen3-ForcedAligner) fails due to VRAM shortage on degraded or unusually long audio, the pipeline automatically loads `CTCFallbackAligner` (wav2vec2-large-xlsr-53-arabic) without any user intervention. Both aligners expose an identical `.align(audio, text, language)` interface. If both fail, the pipeline raises a hard `RuntimeError` with actionable instructions rather than silently proceeding with a dead acoustic signal.
+**Layer 3, Aligner model fallback chain.** If the primary aligner (Qwen3-ForcedAligner) fails due to VRAM shortage on degraded or unusually long audio, the pipeline automatically loads `CTCFallbackAligner` (wav2vec2-large-xlsr-53-arabic) without any user intervention. Both aligners expose an identical `.align(audio, text, language)` interface. If both fail, the pipeline raises a hard `RuntimeError` with actionable instructions rather than silently proceeding with a dead acoustic signal.
 
-Together, these three layers ensure that a single point of failure in audio quality — noisy recording, missing file, codec mismatch, leading silence — degrades the pipeline's accuracy gracefully rather than causing a crash or a silent wrong selection.
+Together, these three layers ensure that a single point of failure in audio quality, noisy recording, missing file, codec mismatch, leading silence, degrades the pipeline's accuracy gracefully rather than causing a crash or a silent wrong selection.
 
 ---
 
@@ -666,7 +666,7 @@ The current epsilon metric measures raw score gap, which is sensitive to absolut
 
 ### 13.2 Language-Adaptive Text Normalization
 
-The current normalization strips Arabic diacritics, parenthetical directions, speaker labels, and stage directions — all of which are specific to this dataset's transcription style. A production system should auto-detect formatting conventions from the data rather than hardcode them, using lightweight pattern detection to identify and remove dataset-specific artifacts.
+The current normalization strips Arabic diacritics, parenthetical directions, speaker labels, and stage directions, all of which are specific to this dataset's transcription style. A production system should auto-detect formatting conventions from the data rather than hardcode them, using lightweight pattern detection to identify and remove dataset-specific artifacts.
 
 ### 13.3 Dynamic Fusion Weight Optimization
 
@@ -674,11 +674,11 @@ The weights (0.40 acoustic, 0.30 semantic, 0.30 CER) were set based on domain kn
 
 ### 13.4 Ensemble Alignment Models
 
-Running two or more forced aligners (e.g., Qwen3 and wav2vec2-xlsr) and averaging their alignment scores would reduce the impact of any single model's failure modes. Currently the fallback chain runs them sequentially — an ensemble would run them in parallel and combine scores.
+Running two or more forced aligners (e.g., Qwen3 and wav2vec2-xlsr) and averaging their alignment scores would reduce the impact of any single model's failure modes. Currently the fallback chain runs them sequentially, an ensemble would run them in parallel and combine scores.
 
 ### 13.5 Direct WER/CER Against All Pairs
 
-Rather than computing CER only against the Whisper reference, one could compute pairwise CER between all 5 candidates to identify the consensus transcription — the one with minimum average edit distance to all others. This partially reintroduces consensus logic, but does so at the character level (CER-based) rather than binary match voting, making it more robust to shared errors. Combined with the acoustic signal as a veto, this could improve accuracy on rows where Whisper is unreliable.
+Rather than computing CER only against the Whisper reference, one could compute pairwise CER between all 5 candidates to identify the consensus transcription, the one with minimum average edit distance to all others. This partially reintroduces consensus logic, but does so at the character level (CER-based) rather than binary match voting, making it more robust to shared errors. Combined with the acoustic signal as a veto, this could improve accuracy on rows where Whisper is unreliable.
 
 ### 13.6 Segment-Level Acoustic Scoring
 
@@ -733,12 +733,13 @@ python verify.py
 
 | File | Description |
 |---|---|
-| `output/results.csv` | **Submission file** — 100 rows, exact required schema |
-| `output/results_enhanced.csv` | Debug file — includes scores, confidence flags, epsilon |
+| `output/results.csv` | **Submission file**, 100 rows, exact required schema |
+| `output/results_enhanced.csv` | Debug file, includes scores, confidence flags, epsilon |
 | `data/whisper_cache.json` | Whisper output cache (100 entries) |
 | `data/aligner_cache.json` | Alignment score cache (up to 500 entries) |
 
 ---
 
-*sardines — Hackenza 2026 — BITS Pilani, KK Birla Goa Campus*
+*sardines, Hackenza 2026, BITS Pilani, KK Birla Goa Campus*
 *Ansh Varma · Sana H · Darshan Rajagoli · Rashida Baldiwala*
+
