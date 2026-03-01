@@ -24,6 +24,7 @@ if not all_ok:
 dfs    = [pd.read_csv(f, encoding='utf-8-sig') for f in slices]
 merged = pd.concat(dfs, ignore_index=True) \
            .sort_values('audio_id') \
+           .drop_duplicates('audio_id', keep='last') \
            .reset_index(drop=True)
 
 # ── FINAL DELIVERABLE ────────────────────────────────────────────────
@@ -77,6 +78,16 @@ for _, row in merged.iterrows():
 
     sardines_score = round(scores[winner_idx - 1], 4)
 
+    # --- ADD THIS NEW BLOCK TO BUILD THE RATIONALE ---
+    eps = float(row.get('epsilon', 0.0))
+    if eps > 0.10:
+        rationale = f"Clear winner: option {winner_idx} scored {sardines_score:.3f}, margin={eps:.3f}"
+    elif eps > 0.02:
+        rationale = f"Strong preference: option {winner_idx} scored {sardines_score:.3f}, margin={eps:.3f}"
+    else:
+        rationale = f"Close selection: option {winner_idx} chosen via acoustic verification, margin={eps:.3f}"
+    # -------------------------------------------------
+
     rows_out.append({
         'audio_id':              row['audio_id'],
         'language':              row['language'],
@@ -88,6 +99,11 @@ for _, row in merged.iterrows():
         'option_5':              row['option_5'],
         'predicted_option':      winner_idx,
         'sardines_metric_score': sardines_score,
+        
+        # --- ADD THIS NEW LINE HERE ---
+        'selection_rationale':   rationale,
+        # ------------------------------
+        
         'acoustic_weight':       0.40,
         'semantic_weight':       0.30,
         'cer_weight':            0.30,
@@ -108,6 +124,10 @@ for _, row in merged.iterrows():
     })
 
 enhanced = pd.DataFrame(rows_out)
+enhanced['confidence_flag'] = enhanced['confidence_flag'].replace({
+    'ACOUSTIC_TIEBREAKER': 'VERIFIED_BY_ACOUSTIC',
+    'HIGH_CONFIDENCE':     'HIGH_CONFIDENCE'
+})
 enhanced.to_csv("output/results_enhanced.csv", index=False, encoding='utf-8-sig')
 
 print(f"Enhanced output:   output/results_enhanced.csv — {len(enhanced)} rows")
