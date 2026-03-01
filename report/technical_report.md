@@ -721,7 +721,7 @@ pip install -r requirements.txt
 
 # 4. Download Qwen3-ForcedAligner-0.6B into ./Qwen3-ForcedAligner-0.6B/
 
-# 5. Run pipeline
+# 5. Run pipeline inside the src directory
 python pipeline.py
 
 # 6. Merge slices (if two machines were used)
@@ -744,5 +744,6 @@ python verify.py
 
 *sardines, Hackenza 2026, BITS Pilani, KK Birla Goa Campus*
 *Ansh Varma · Sana H · Darshan Rajagoli · Rashida Baldiwala*
+
 
 
