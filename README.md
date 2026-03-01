@@ -118,7 +118,7 @@ Input CSV (100 rows × 5 candidates)
 
 ```bash
 # 1. Clone the repository
-git clone <your-repo-url>
+git clone https://github.com/aviate15/sardines-pipeline.git
 cd sardines
 
 # 2. Install dependencies
