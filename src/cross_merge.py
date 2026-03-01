@@ -1,6 +1,6 @@
 """
-cross_merge.py — Pull Machine A and Machine B slice files from the repo and
-                 combine them into the final deliverable.
+cross_merge.py — Combine Machine A (rows 1-50) and Machine B (rows 51-100)
+                 into the final deliverable.
 
 ════════════════════════════════════════════════════════════════════════════════
 THE FULL WORKFLOW (read this once)
@@ -17,23 +17,18 @@ THE FULL WORKFLOW (read this once)
       python cross_merge.py
 
   It will:
-    1. Find both CSV files in the output/ folder
+    1. Load exactly results_1_50.csv and results_51_100.csv — nothing else
     2. Validate row counts and required columns
-    3. Check for ID gaps or overlaps
-    4. Merge and sort by audio_id
-    5. Write output/results.csv          ← clean submission (exact brief format)
-    6. Write output/results_enhanced.csv ← full debug output with all scores
+    3. Merge and sort by audio_id
+    4. Write output/results.csv          ← clean submission (exact brief format)
+    5. Write output/results_enhanced.csv ← full debug output with all scores
 
 ════════════════════════════════════════════════════════════════════════════════
 RULES FOR MACHINE A AND B
 ════════════════════════════════════════════════════════════════════════════════
 
-  File naming MUST follow this exact pattern:   results_{START}_{END}.csv
-  Machine A produces:                           results_1_50.csv
-  Machine B produces:                           results_51_100.csv
-
-  Both files must be placed in the output/ folder before running this script.
-  The easiest way: both machines push to git, then pull on the merging machine.
+  Machine A produces:   output/results_1_50.csv    (exactly 50 rows)
+  Machine B produces:   output/results_51_100.csv  (exactly 50 rows)
 
   Git workflow:
     Machine A:  git add output/results_1_50.csv && git commit -m "A done" && git push
@@ -44,10 +39,13 @@ RULES FOR MACHINE A AND B
 """
 
 import pandas as pd
-import glob
 import ast
 import os
 import sys
+
+# ── HARDCODED: only ever these two files ─────────────────────────────────────
+SLICE_A = "output/results_1_50.csv"      # Machine A — rows 1-50
+SLICE_B = "output/results_51_100.csv"    # Machine B — rows 51-100
 
 REQUIRED_COLS = [
     'audio_id', 'language', 'audio',
@@ -64,110 +62,75 @@ SUBMISSION_COLS = [
     'wer_option1', 'wer_option2', 'wer_option3', 'wer_option4', 'wer_option5'
 ]
 
-# ─────────────────────────────────────────────────────────────────────────────
-# STEP 1 — FIND SLICE FILES
-# ─────────────────────────────────────────────────────────────────────────────
-
 print()
 print("=" * 60)
 print("  SARDINES — cross_merge.py")
 print("=" * 60)
 print()
 
-slices = sorted(glob.glob("output/results_*_*.csv"))
+# ─────────────────────────────────────────────────────────────────────────────
+# STEP 1 — CHECK BOTH FILES EXIST
+# ─────────────────────────────────────────────────────────────────────────────
 
-# Exclude the final output files if they already exist from a previous run
-slices = [s for s in slices if not s.endswith("results_enhanced.csv")]
+print("[1/5] Checking for slice files...")
 
-if not slices:
-    print("ERROR: No slice files found in output/")
+missing = [f for f in [SLICE_A, SLICE_B] if not os.path.exists(f)]
+if missing:
     print()
-    print("Expected files like:  output/results_1_50.csv")
-    print("                      output/results_51_100.csv")
-    print()
-    print("Current contents of output/:")
-    for f in sorted(glob.glob("output/*")):
+    print("ERROR: Missing required file(s):")
+    for f in missing:
         print(f"  {f}")
     print()
-    print("Make sure both machines have pushed their files and you have pulled.")
+    print("Machine A must push:  output/results_1_50.csv")
+    print("Machine B must push:  output/results_51_100.csv")
+    print("Then run:  git pull && python cross_merge.py")
     sys.exit(1)
 
-print(f"[1/5] Found {len(slices)} slice file(s):")
-for s in slices:
-    print(f"      {s}")
+print(f"      ✓  {SLICE_A}")
+print(f"      ✓  {SLICE_B}")
 
 # ─────────────────────────────────────────────────────────────────────────────
-# STEP 2 — VALIDATE EACH SLICE
+# STEP 2 — VALIDATE EACH FILE
 # ─────────────────────────────────────────────────────────────────────────────
 
 print()
 print("[2/5] Validating...")
 
-all_ok      = True
-all_ranges  = []  # list of (start, end, filepath)
+all_ok = True
 
-for s in slices:
-    basename = os.path.basename(s)              # results_1_50.csv
-    stem     = basename.replace('.csv', '')     # results_1_50
-    parts    = stem.replace('results_', '').split('_')  # ['1', '50']
+checks = [
+    (SLICE_A, 1,  50),
+    (SLICE_B, 51, 100),
+]
 
-    # Parse start/end from filename
-    try:
-        start, end = int(parts[0]), int(parts[1])
-    except (IndexError, ValueError):
-        print(f"  FAIL  {s}")
-        print(f"        Cannot parse start/end from filename.")
-        print(f"        Rename it to:  results_START_END.csv  (e.g. results_1_50.csv)")
-        all_ok = False
-        continue
+for filepath, expected_start, expected_end in checks:
+    d        = pd.read_csv(filepath, encoding='utf-8-sig')
+    expected = expected_end - expected_start + 1
 
-    d        = pd.read_csv(s, encoding='utf-8-sig')
-    expected = end - start + 1
-
-    # Row count check
+    # Row count
     if len(d) != expected:
-        print(f"  FAIL  {s}  —  {len(d)} rows found, expected {expected} ({start}–{end})")
-        print(f"        Pipeline may have crashed. Re-run the missing rows before merging.")
+        print(f"  FAIL  {filepath}  —  {len(d)} rows found, expected {expected}")
+        print(f"        Pipeline may have crashed mid-run. Re-run missing rows first.")
         all_ok = False
     else:
-        print(f"  OK    {s}  —  {len(d)} rows  (ids {start}–{end})")
+        print(f"  OK    {filepath}  —  {len(d)} rows  (ids {expected_start}–{expected_end})")
 
-    # Required columns check
+    # Required columns
     missing_cols = [c for c in REQUIRED_COLS if c not in d.columns]
     if missing_cols:
-        print(f"  FAIL  {s}  —  missing columns: {missing_cols}")
+        print(f"  FAIL  {filepath}  —  missing columns: {missing_cols}")
         all_ok = False
 
-    # audio_id range check — IDs in file should actually be within [start, end]
+    # audio_id range sanity check
     actual_min = int(d['audio_id'].min())
     actual_max = int(d['audio_id'].max())
-    if actual_min < start or actual_max > end:
-        print(f"  WARN  {s}  —  audio_ids go from {actual_min} to {actual_max}, "
-              f"expected {start}–{end}")
-
-    all_ranges.append((start, end, s))
-
-# Overlap / gap detection across slices
-if len(all_ranges) >= 2:
-    all_ranges_sorted = sorted(all_ranges, key=lambda x: x[0])
-    print()
-    for i in range(len(all_ranges_sorted) - 1):
-        _, end_a, file_a = all_ranges_sorted[i]
-        start_b, _, file_b = all_ranges_sorted[i + 1]
-        if start_b <= end_a:
-            print(f"  WARN  Overlap detected: {file_a} ends at {end_a}, "
-                  f"{file_b} starts at {start_b}")
-            print(f"        Duplicates will be removed (first occurrence kept).")
-        elif start_b > end_a + 1:
-            gap_ids = list(range(end_a + 1, start_b))
-            print(f"  WARN  Gap detected: audio_ids {gap_ids} are missing.")
-            print(f"        These rows are not covered by any machine.")
-            all_ok = False
+    if actual_min < expected_start or actual_max > expected_end:
+        print(f"  WARN  {filepath}  —  audio_ids run {actual_min}–{actual_max}, "
+              f"expected {expected_start}–{expected_end}")
 
 if not all_ok:
     print()
     print("Fix the errors above, then re-run cross_merge.py.")
-    print("(Warnings are OK to proceed with — Errors are not.)")
     sys.exit(1)
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -177,16 +140,22 @@ if not all_ok:
 print()
 print("[3/5] Combining and sorting...")
 
-dfs = [pd.read_csv(f, encoding='utf-8-sig') for f in slices]
+df_a = pd.read_csv(SLICE_A, encoding='utf-8-sig')
+df_b = pd.read_csv(SLICE_B, encoding='utf-8-sig')
+
 merged = (
-    pd.concat(dfs, ignore_index=True)
-    .drop_duplicates(subset=['audio_id'], keep='first')
+    pd.concat([df_a, df_b], ignore_index=True)
     .sort_values('audio_id')
     .reset_index(drop=True)
 )
 
-print(f"      {len(merged)} rows total, "
-      f"audio_ids {int(merged['audio_id'].min())}–{int(merged['audio_id'].max())}")
+print(f"      {len(merged)} rows total  "
+      f"(ids {int(merged['audio_id'].min())}–{int(merged['audio_id'].max())})")
+
+if len(merged) != 100:
+    print(f"  WARN  Expected 100 rows total, got {len(merged)}")
+if sorted(merged['audio_id'].tolist()) != list(range(1, 101)):
+    print(f"  WARN  audio_ids are not a clean 1–100 sequence")
 
 # ─────────────────────────────────────────────────────────────────────────────
 # STEP 4 — WRITE results.csv (clean submission file)
@@ -210,13 +179,11 @@ rows_out = []
 
 for _, row in merged.iterrows():
 
-    # Parse final_scores from string e.g. "[0.922, 0.786, 0.942, 0.922, 0.358]"
     try:
         scores = ast.literal_eval(str(row['final_scores']))
     except Exception:
         scores = [0.0] * 5
 
-    # Find which option number (1-5) matches the golden_ref text
     golden     = ' '.join(str(row['golden_ref']).split())
     winner_idx = -1
     for i in range(1, 6):
@@ -225,7 +192,6 @@ for _, row in merged.iterrows():
             winner_idx = i
             break
     if winner_idx == -1:
-        # Fallback: highest fused score
         winner_idx = scores.index(max(scores)) + 1
 
     sardines_score = round(float(scores[winner_idx - 1]), 4)
@@ -233,7 +199,6 @@ for _, row in merged.iterrows():
     conf_flag      = str(row.get('confidence_flag', 'N/A'))
     w_quality      = str(row.get('whisper_quality', 'N/A'))
 
-    # Human-readable rationale
     if conf_flag == 'HIGH_CONFIDENCE':
         rationale = (f"Strong preference: option {winner_idx} scored "
                      f"{sardines_score}, margin={epsilon:.3f}")
