@@ -22,9 +22,6 @@ OUTPUT_CSV    = "output/results.csv"
 WHISPER_CACHE = "data/whisper_cache.json"
 ALIGNER_CACHE = "data/aligner_cache.json"
 
-# ── API — NEVER COMMIT. Share via WhatsApp only. ──────────────────────
-ANTHROPIC_API_KEY = "sk-ant-PASTE_HERE"
-
 # ── THIS MACHINE'S SLICE ──────────────────────────────────────────────
 # Machine A:  START=1,  END=50
 # Machine B:  START=51, END=100
