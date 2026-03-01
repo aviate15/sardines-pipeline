@@ -707,6 +707,8 @@ Currently, rows are processed sequentially. With a GPU cluster or batched infere
 
 ### Reproducibility Steps
 
+> **Before running anything:** Refer to [ALL_PREREQUISITES.txt](../ALL_PREREQUISITES.txt) and ensure every software, system-level, and hardware requirement listed there is installed on your machine.
+
 ```bash
 # 1. Install dependencies
 pip install -r requirements.txt
@@ -742,4 +744,5 @@ python verify.py
 
 *sardines, Hackenza 2026, BITS Pilani, KK Birla Goa Campus*
 *Ansh Varma · Sana H · Darshan Rajagoli · Rashida Baldiwala*
+
 
